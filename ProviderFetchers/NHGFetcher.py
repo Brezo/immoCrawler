@@ -15,12 +15,14 @@ class NHGFetcher(ImmoFetcher):
     def fetch(self) -> [CrawledImmo]:
         immo_results = []
         self.__page = 1
+
         while (self.__max_page == 0 or
                self.__page <= self.__max_page):
             # print("page: " + str(self.__page) + "/" + str(self.__max_page))
             for result in self.__get_search_results():
                 immo_results.append(result)
             self.__page = self.__page + 1
+
         return immo_results
 
     def __get_search_results(self) -> [CrawledImmo]:
