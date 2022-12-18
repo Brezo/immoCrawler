@@ -90,7 +90,11 @@ class OESWFetcher(ImmoFetcher):
         object_detail.postcode = postcode_match.group(1)
         object_detail.city = postcode_match.group(2)
         object_detail.street = doc.select_one("h2.adr-2").text
-        object_detail.status = doc.select_one("section.labelWrapper span.label-2").text
+        if 'sofort verfügbar' in doc.select_one("section.labelWrapper span.label-2").text:
+            object_detail.status = 'available'
+        else:
+            object_detail.status = 'other'
+
         key_data = doc.select_one("section.eckdaten div.row")
         for immo_detail in key_data.select("div.col-sm-4 div"):
             nav_string = str(immo_detail.contents[1])
@@ -108,6 +112,8 @@ class OESWFetcher(ImmoFetcher):
                     return None
 
                 object_detail.surface = float(size_match.group(1))
+                if not self.__check_surface_in_filter(object_detail.surface):
+                    return None
 
             if 'Zimmer' in label_txt:
                 object_detail.rooms = float(nav_string)
@@ -136,3 +142,11 @@ class OESWFetcher(ImmoFetcher):
                 object_detail.rent = rent_match.group(1).replace('.', '').replace(',', '.')
 
         return object_detail
+
+    def __check_surface_in_filter(self, area: float) -> bool:
+        # check if apartment matches filter criteria
+        if (self.__config.surface_min <= area <= self.__config.surface_max != 0)\
+                or (self.__config.surface_min <= area and self.__config.surface_max == 0):
+            return True
+        else:
+            return False
