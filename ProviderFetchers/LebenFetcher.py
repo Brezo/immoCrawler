@@ -37,10 +37,10 @@ class LebenFetcher(ImmoFetcher):
             crawled_immo = CrawledImmo()
             crawled_immo.city = address_result[0][1]
             crawled_immo.postcode = address_result[0][0]
-            if not self.__check_postcode_in_filter(str(crawled_immo.postcode)):
+            if not ImmoFetcher._check_postcode_in_filter(self.__config, str(crawled_immo.postcode)):
                 continue
             area = float(apartment.select_one("span.area").text.replace(",", "."))
-            if not self.__check_area_in_filter(area):
+            if not ImmoFetcher._check_surface_in_filter(self.__config, area):
                 continue
 
             id = re.findall("(?<=location.href='/angebot/wohnung-detail/\?id=).+(?=')", apartment.get("onclick"))
@@ -52,22 +52,12 @@ class LebenFetcher(ImmoFetcher):
             crawled_immo.surface = area
             crawled_immo.rooms = float(apartment.select_one("span.room").text)
             crawled_immo.street = apartment.select_one("span.address").text
-            crawled_immo.self_funding = self.__amount_str_to_float(apartment.select_one(
+            crawled_immo.self_funding = ImmoFetcher._amount_str_to_float(apartment.select_one(
                 "span.financing-option-value").text)
 
             immo_results.append(self.__get_apartment_details(crawled_immo))
 
         return immo_results
-
-    def __check_postcode_in_filter(self, postcode: str):
-        if self.__config.postcode_filter == '':
-            #no filter, accept every postcode
-            return True
-
-        if re.search(self.__config.postcode_filter, postcode) is None:
-            return False
-        else:
-            return True
 
     def __get_apartment_details(self, crawled_immo: CrawledImmo) -> CrawledImmo:
         crawled_immo.detail_url = "https://www.wohnen.at/angebot/wohnung-detail/?id=" + crawled_immo.id
@@ -91,14 +81,6 @@ class LebenFetcher(ImmoFetcher):
 
         return crawled_immo
 
-    def __check_area_in_filter(self, area: float) -> bool:
-        # check if apartment matches filter criteria
-        if (self.__config.surface_min <= area <= self.__config.surface_max != 0)\
-                or (self.__config.surface_min <= area and self.__config.surface_max == 0):
-            return True
-        else:
-            return False
-
     def __get_cards(self) -> requests.Response:
         url = "https://www.wohnen.at/umbraco/Surface/UnitSearch/Filter"
 
@@ -111,6 +93,3 @@ class LebenFetcher(ImmoFetcher):
         }
 
         return requests.request("POST", url, headers=headers, data=payload)
-
-    def __amount_str_to_float(self, amount_text: str) -> float:
-        return float(amount_text.replace(",", ".").replace("€","").replace(u'\xa0', ''))

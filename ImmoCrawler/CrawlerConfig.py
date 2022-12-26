@@ -3,9 +3,10 @@ class CrawlerConfig:
                  db_host: str = '', db_password: str = '', smtp_host: str = '', smtp_port: int = 0,
                  smtp_address: str = '', smtp_pwd: str = '',
                  recipients: [str] = [], subject: str = '', chat_id: str = '', bot_token: str = '',
-                 surface_min=0, surface_max=0, postcode_filter: str = ''):
+                 surface_min=0, surface_max=0, postcode_filter: str = '',
+                 discord_token='', discord_channel=0):
         self.providers = providers
-        if notification_channel not in ('Mail', 'Telegram'):
+        if notification_channel not in ('Mail', 'Telegram', 'Discord'):
             raise ValueError('Invalid notification channel')
         self.notification_channel = notification_channel
         self.database = database
@@ -23,3 +24,5 @@ class CrawlerConfig:
         self.surface_min = surface_min
         self.surface_max = surface_max
         self.postcode_filter = postcode_filter
+        self.discord_token = discord_token
+        self.discord_channel = discord_channel

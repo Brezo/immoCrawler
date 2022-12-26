@@ -45,13 +45,13 @@ class SozialbauFetcher(ImmoFetcher):
                 elif column_counter == 2:
                     crawled_immo.rooms = int(column.text)
                 elif column_counter == 3:
-                    crawled_immo.self_funding = self.__amount_str_to_float(column.text)
+                    crawled_immo.self_funding = ImmoFetcher._amount_str_to_float(column.text)
                 elif column_counter == 4:
-                    crawled_immo.rent = self.__amount_str_to_float(column.text)
+                    crawled_immo.rent = ImmoFetcher._amount_str_to_float(column.text)
                 else:
                     break
 
-            if not self.__check_postcode_in_filter(postcode):
+            if not ImmoFetcher._check_postcode_in_filter(self.__config, postcode):
                 continue
 
             if len(crawled_immo.detail_url) > 0 and len(crawled_immo.id) > 0:
@@ -59,25 +59,12 @@ class SozialbauFetcher(ImmoFetcher):
             else:
                 continue
 
-            if not self.__check_area_in_filter(crawled_immo.surface):
+            if not ImmoFetcher._check_surface_in_filter(self.__config, crawled_immo.surface):
                 continue
 
             available_immo.append(crawled_immo)
 
         return available_immo
-
-    def __check_postcode_in_filter(self, postcode: str):
-        if self.__config.postcode_filter == '':
-            #no filter, accept every postcode
-            return True
-
-        if re.search(self.__config.postcode_filter, postcode) is None:
-            return False
-        else:
-            return True
-
-    def __amount_str_to_float(self, amount_text: str) -> float:
-        return float(amount_text.replace(".", "").replace(",", ".").replace("€","").replace(u'\xa0', ''))
 
     def __get_detail(self, crawled_immo:CrawledImmo):
         address_pattern = '(\d{4}) (.+), (.*)'
@@ -96,11 +83,3 @@ class SozialbauFetcher(ImmoFetcher):
                 surface = re.findall("\d+", item.text)
                 if surface is not None:
                     crawled_immo.surface = float(surface[0])
-
-    def __check_area_in_filter(self, area: float) -> bool:
-        # check if apartment matches filter criteria
-        if (self.__config.surface_min <= area <= self.__config.surface_max != 0)\
-                or (self.__config.surface_min <= area and self.__config.surface_max == 0):
-            return True
-        else:
-            return False

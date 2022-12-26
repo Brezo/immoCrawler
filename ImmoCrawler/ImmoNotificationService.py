@@ -1,4 +1,4 @@
-from ImmoCrawler import CrawledImmo, CrawlerConfig
+from ImmoCrawler import CrawledImmo, CrawlerConfig, ImmoFetcher
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -6,7 +6,7 @@ import requests
 
 
 class ImmoNotificationService:
-    ignore_status = ["Reserviert", "removed"]
+    ignore_status = [ImmoFetcher.status_reserved, ImmoFetcher.status_removed]
 
     def __init__(self, config: CrawlerConfig):
         self.new_immo = []
@@ -32,17 +32,20 @@ class ImmoNotificationService:
         if len(insert_string) > 0 and len(update_string) > 0:
             update_string = ("\n\n\n" + update_string)
         message = (insert_string + update_string)
-
-        if self.config.notification_channel == "Mail":
-            self.send_mail(message)
-        elif self.config.notification_channel == "Telegram":
-            self.send_telegram(message)
+        
+        match self.config.notification_channel:
+            case "Mail":
+                self.send_mail(message)
+            case "Telegram":
+                self.send_telegram(message)
+            case "Discord":
+                self.send_discord(message)
 
     def send_telegram(self, message) -> None:
         # obtaining chat-ids and bot tokens:
         # https://stackoverflow.com/questions/32423837/telegram-bot-how-to-get-a-group-chat-id
         # https://stackoverflow.com/a/67152755
-        # split message into chunks to stay in telegram api limit
+        # split message into chunks to stay below telegram api limit
         chunk_size = 4000
         chunks = [message[i:i + chunk_size] for i in range(0, len(message), chunk_size)]
         for chunk in chunks:
@@ -105,3 +108,14 @@ class ImmoNotificationService:
                     )
 
         return body
+
+    def send_discord(self, message):
+        #see https://discord.com/developers/docs/resources/channel#create-message for doc
+        #api limits message to 2000 characters
+        chunk_size = 2000
+
+        api_url = f'https://discord.com/api/v10/channels/{self.config.discord_channel}/messages'
+        headers = {'Authorization': f'Bot {self.config.discord_token}'}
+        chunks = [message[i:i + chunk_size] for i in range(0, len(message), chunk_size)]
+        for chunk in chunks:
+            requests.post(url=api_url, headers=headers, json={'content': chunk})

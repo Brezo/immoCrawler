@@ -33,6 +33,8 @@ def get_config(argv) -> Optional[CrawlerConfig]:
     surface_min = 0
     surface_max = 0
     postcode_filter = ''
+    discord_token = ''
+    discord_channel = 0
 
     optlist, args = getopt.getopt(argv[1:], 'hc:')
     config_path = ''
@@ -73,11 +75,14 @@ def get_config(argv) -> Optional[CrawlerConfig]:
     if notification_channel == 'Telegram':
         chat_id = config_parser.get("Telegram", "chat_id")
         bot_token = config_parser.get("Telegram", "bot_token")
+    if notification_channel == 'Discord':
+        discord_token = config_parser.get('Discord', 'discord_token')
+        discord_channel = config_parser.getint('Discord', 'discord_channel')
 
     crawler_config = ImmoCrawler.CrawlerConfig(providers, notification_channel, database, db_user, db_host,
                                                db_password, smtp_host, smtp_port, smtp_address, smtp_pwd,
                                                recipients, subject, chat_id, bot_token, surface_min, surface_max,
-                                               postcode_filter)
+                                               postcode_filter, discord_token, discord_channel)
 
     return crawler_config
 

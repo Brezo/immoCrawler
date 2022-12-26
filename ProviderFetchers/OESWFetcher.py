@@ -30,11 +30,10 @@ class OESWFetcher(ImmoFetcher):
                 continue
 
             # check if postcode matches regex from config
-            if self.__config.postcode_filter:
-                city = available_building.get("data-title")
-                regex_results = re.findall("\d{4}", city)
-                if re.match(self.__config.postcode_filter, regex_results[0]) is None:
-                    continue
+            city = available_building.get("data-title")
+            regex_results = re.findall("\d{4}", city)
+            if not ImmoFetcher._check_postcode_in_filter(self.__config, regex_results[0]):
+                continue
 
             for immo in self.__get_objects_at_address(self.base_url + target_link):
                 immo_results.append(immo)
@@ -112,7 +111,7 @@ class OESWFetcher(ImmoFetcher):
                     return None
 
                 object_detail.surface = float(size_match.group(1))
-                if not self.__check_surface_in_filter(object_detail.surface):
+                if not ImmoFetcher._check_surface_in_filter(self.__config, object_detail.surface):
                     return None
 
             if 'Zimmer' in label_txt:
@@ -142,11 +141,3 @@ class OESWFetcher(ImmoFetcher):
                 object_detail.rent = rent_match.group(1).replace('.', '').replace(',', '.')
 
         return object_detail
-
-    def __check_surface_in_filter(self, area: float) -> bool:
-        # check if apartment matches filter criteria
-        if (self.__config.surface_min <= area <= self.__config.surface_max != 0)\
-                or (self.__config.surface_min <= area and self.__config.surface_max == 0):
-            return True
-        else:
-            return False

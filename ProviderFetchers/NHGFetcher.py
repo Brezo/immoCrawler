@@ -45,22 +45,12 @@ class NHGFetcher(ImmoFetcher):
 
         for result_card in doc.select("div.panel"):
             #get postcode and check filter
-            if not self.__check_postcode_in_filter(result_card.select_one("h5").text[0:4]):
+            if not ImmoFetcher._check_postcode_in_filter(self.__config, result_card.select_one("h5").text[0:4]):
                 continue
             # get single results from response
             detail_path = result_card.get('data-url')
             immo_results.append(self.__get_immo_detail(detail_path))
         return immo_results
-
-    def __check_postcode_in_filter(self, postcode: str):
-        if self.__config.postcode_filter == '':
-            #no filter, accept every postcode
-            return True
-
-        if re.search(self.__config.postcode_filter, postcode) is None:
-            return False
-        else:
-            return True
 
     def __get_immo_detail(self, detail_url) -> CrawledImmo:
 
@@ -85,8 +75,14 @@ class NHGFetcher(ImmoFetcher):
 
         # get status (being built, available, reserved)
         status = doc.select_one("span.detail-label")
-        if status:
-            immo.status = status.text
+
+        match status:
+            case 'Reserviert':
+                immo.status = ImmoFetcher.status_reserved
+            case 'In Bau':
+                immo.status = ImmoFetcher.status_under_construction
+            case other:
+                immo.status = ImmoFetcher.status_available
 
         surface = doc.select_one("div.qm").text
 
@@ -114,9 +110,9 @@ class NHGFetcher(ImmoFetcher):
         finance = doc.select_one("div#Finanzierung")
         for finance_detail in finance.select("div.euro"):
             finance_label = finance_detail.parent.findPrevious("div").contents[0]
-            amount_sanitized = finance_detail.text.replace(u'\xa0', '').replace(",", ".")
+            #amount_sanitized = finance_detail.text.replace(u'\xa0', '').replace(",", ".")
             if "Belastung" in finance_label:
-                immo.rent = float(amount_sanitized)
+                immo.rent = ImmoFetcher._amount_str_to_float(finance_detail.text)#float(amount_sanitized)
             if "Kaution" in finance_label or "Eigenmittel" in finance_label:
-                immo.self_funding = float(amount_sanitized)
+                immo.self_funding = ImmoFetcher._amount_str_to_float(finance_detail.text)#float(amount_sanitized)
         return immo

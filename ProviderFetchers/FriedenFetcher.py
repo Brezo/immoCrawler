@@ -1,7 +1,6 @@
 from ImmoCrawler import ImmoFetcher, CrawledImmo, CrawlerConfig
 import requests
 from bs4 import BeautifulSoup
-import re
 
 
 class FriedenFetcher(ImmoFetcher):
@@ -50,7 +49,7 @@ class FriedenFetcher(ImmoFetcher):
             immo.detail_url = "https://www.frieden.at/immobiliensuche/" + immo.id
 
             immo.postcode = item["postCode"]
-            if not self.__check_postcode_in_filter(str(immo.postcode)):
+            if not ImmoFetcher._check_postcode_in_filter(self.__config, str(immo.postcode)):
                 continue
 
             immo.street = item["street"]
@@ -83,17 +82,6 @@ class FriedenFetcher(ImmoFetcher):
             immo_results.append(self.__get_immo_open_spaces(immo))
 
         return immo_results
-
-    def __check_postcode_in_filter(self, postcode: str):
-        if self.__config.postcode_filter == '':
-            #no filter, accept every postcode
-            return True
-
-        if re.search(self.__config.postcode_filter, postcode) is None:
-            return False
-        else:
-            return True
-
 
     def __get_immo_open_spaces(self, immo: CrawledImmo) -> CrawledImmo:
         """check flat for open spaces"""

@@ -1,5 +1,5 @@
 import psycopg2
-from ImmoCrawler import CrawledImmo, ImmoNotificationService, CrawlerConfig
+from ImmoCrawler import CrawledImmo, ImmoNotificationService, CrawlerConfig, ImmoFetcher
 
 
 class ImmoDbWriter:
@@ -121,12 +121,12 @@ class ImmoDbWriter:
 
         # check if existing immo was removed
         for immo in self.existing_immo:
-            if immo.status == "removed":
+            if immo.status == ImmoFetcher.status_removed:
                 continue
             prev_immo = next((x for x in crawled_immo if (immo.provider == x.provider and
                                                           immo.id == x.id)), None)
             if prev_immo is None:
-                immo_update.append(CrawledImmo(provider=immo.provider, id=immo.id, status="removed"))
+                immo_update.append(CrawledImmo(provider=immo.provider, id=immo.id, status=ImmoFetcher.status_removed))
 
         if len(immo_insert) > 0:
             self.insert_data(immo_insert)
