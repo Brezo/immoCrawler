@@ -33,13 +33,12 @@ class ImmoNotificationService:
             update_string = ("\n\n\n" + update_string)
         message = (insert_string + update_string)
         
-        match self.config.notification_channel:
-            case "Mail":
-                self.send_mail(message)
-            case "Telegram":
-                self.send_telegram(message)
-            case "Discord":
-                self.send_discord(message)
+        if self.config.notification_channel == "Mail":
+            self.send_mail(message)
+        elif self.config.notification_channel == "Telegram":
+            self.send_telegram(message)
+        elif self.config.notification_channel == "Discord":
+            self.send_discord(message)
 
     def send_telegram(self, message) -> None:
         # obtaining chat-ids and bot tokens:
