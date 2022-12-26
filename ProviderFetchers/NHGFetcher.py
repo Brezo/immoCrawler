@@ -76,9 +76,11 @@ class NHGFetcher(ImmoFetcher):
         # get status (being built, available, reserved)
         status = doc.select_one("span.detail-label")
 
-        if 'Reserviert' in status:
+        if status is None:
+            immo.status = ImmoFetcher.status_available
+        elif 'Reserviert' in status.text:
             immo.status = ImmoFetcher.status_reserved
-        elif 'In Bau' in status:
+        elif 'In Bau' in status.text:
             immo.status = ImmoFetcher.status_under_construction
         else:
             immo.status = ImmoFetcher.status_available
